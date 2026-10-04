@@ -1,0 +1,30 @@
+{
+  "champion": "Random Forest",
+  "Logistic Regression": {
+    "feature_set": "compact",
+    "params": {
+      "C": 0.003
+    },
+    "cv_logloss": 0.9608800661661853,
+    "cv_acc": 0.5526315789473685
+  },
+  "Random Forest": {
+    "feature_set": "compact",
+    "params": {
+      "max_depth": 4,
+      "min_samples_leaf": 25
+    },
+    "cv_logloss": 0.9606549343403348,
+    "cv_acc": 0.5482456140350878
+  },
+  "XGBoost": {
+    "feature_set": "all",
+    "params": {
+      "max_depth": 2,
+      "learning_rate": 0.02,
+      "n_estimators": 300
+    },
+    "cv_logloss": 0.9618994394938151,
+    "cv_acc": 0.5491228070175439
+  }
+}

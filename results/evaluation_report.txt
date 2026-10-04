@@ -1,0 +1,36 @@
+EVALUATION — champion: Random Forest (compact features), test = 2024-25 + 2025-26 (760 matches)
+Accuracy 0.505 | Log loss 1.0160
+Bookmakers: accuracy 0.516, log loss 0.9945
+Predicted outcome counts: {'Home win': 499, 'Draw': 0, 'Away win': 261}  | Actual: {'Home win': 317, 'Draw': 197, 'Away win': 246}
+
+              precision    recall  f1-score   support
+
+    Home win       0.51      0.81      0.63       317
+        Draw       0.00      0.00      0.00       197
+    Away win       0.49      0.52      0.50       246
+
+    accuracy                           0.51       760
+   macro avg       0.33      0.44      0.38       760
+weighted avg       0.37      0.51      0.43       760
+
+Accuracy by confidence band:
+        accuracy  matches  avg_conf
+band                               
+<40%       0.453     86.0     0.382
+40-50%     0.433    291.0     0.449
+50-60%     0.511    184.0     0.544
+60-70%     0.587    121.0     0.644
+70%+       0.692     78.0     0.757
+
+Top 10 features (permutation importance, log loss):
+                   feature  importance     std
+                  Elo_diff     0.00969 0.00324
+           SeasonGDpg_diff     0.00346 0.00136
+            SeasonPPG_diff     0.00209 0.00104
+                   HomeElo     0.00208 0.00095
+prev_squad_total_cost_diff     0.00057 0.00103
+                GD_L5_diff     0.00030 0.00036
+     prev_xi_avg_cost_diff     0.00024 0.00161
+               H2H_HomePPG     0.00022 0.00013
+                GF_L5_diff     0.00017 0.00010
+               SoT_L5_diff     0.00010 0.00065

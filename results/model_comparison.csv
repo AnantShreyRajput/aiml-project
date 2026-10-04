@@ -1,0 +1,8 @@
+model,test_accuracy,test_logloss,test_macro_f1,features,cv_logloss
+Bookmakers (reference),0.5158,0.9945,0.3863,,
+Elo-difference only (LogReg),0.5013,1.013,0.3746,Elo_diff,
+Logistic Regression,0.5,1.0153,0.3751,compact,0.9609
+Ensemble (average of 3),0.4987,1.0153,0.3727,,
+Random Forest,0.5053,1.016,0.3775,compact,0.9607
+XGBoost,0.4947,1.0209,0.3676,all,0.9619
+Baseline: prior (always Home win),0.4171,1.0832,0.1962,,
