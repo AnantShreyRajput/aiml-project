@@ -30,3 +30,4 @@ Feature groups (all use only matches played BEFORE the match date):
 - **Squad strength** from previous season (cost, points, ICT, GK/DEF/MID/ATT).
 - **Difference features** (home minus away) and attack-vs-defence matchups.
 Checked by hand against Arsenal's real history (form, venue form, streaks, season PPG, rest days all match).
+"3,820 raw = 380 (2016-17 history) + 3,440 modelled (2,660 dev + 760 test + 20 live)”.

@@ -4,9 +4,11 @@ An AI/ML project that predicts the result of a Premier League match — **Home w
 team form, Elo ratings, head-to-head records and squad strength. It covers the full machine-learning pipeline:
 data collection → cleaning → feature engineering → model training → evaluation → a web app.
 
-**Result:** a Random Forest that is right **50.5%** of the time on 760 unseen matches (2024-25 and 2025-26).
-That beats the "always pick the home team" baseline (41.7%) and comes within about 1 point of professional
-bookmakers (51.6%).
+**Result:** a reproducible comparative study of pre-match EPL prediction. On 760 unseen matches (2024-25 and 2025-26) the
+Random Forest is right 50.7% of the time (always-home-win: 41.7%). However, a feature ablation on five walk-forward seasons
+shows that previous-season FPL squad features do **not** consistently improve log loss over Elo or Elo + rolling form, and
+a Dixon-Coles goal model performs similarly. Bookmakers (51.6% accuracy, log loss 0.995) remain significantly better.
+
 
 ---
 
@@ -184,6 +186,17 @@ against 150 historical matches and match the training features exactly.
 - Ideas: add xG for all seasons, player-level line-up strength, a Poisson model to predict exact scores, and automatic data updates each week.
 
 ---
+## 6. Review revisions (ablation, baselines, audit)
+| Script | What it does | Run order |
+|---|---|---|
+| `src/audit_data.py` | Reconciles counts, proves no leakage, checks only completed matches are used | after step 3 |
+| `src/dixon_coles.py` | Time-decayed Dixon-Coles (Poisson) goal model used as a baseline | imported by step 06 |
+| `src/06_ablation.py` | Elo-only vs +form vs +form+FPL on identical walk-forward seasons, plus baselines | after step 5 |
+| `src/07_probability_eval.py` | Log loss, Brier, calibration, draw precision/recall, per-season and bootstrap uncertainty | after step 06 |
+ 
+Data reconciliation: raw 3,820 matches = 380 (2016-17, history only) + 3,440 modelled. Modelled = 2,660 development
+(2017-18..2023-24) + 760 test (2024-25, 2025-26) + 20 live 2026-27 games (never used for training or testing).
+
 
 ## 6. Tech stack
 Python · pandas · NumPy · scikit-learn · XGBoost · Matplotlib · Altair · Streamlit · joblib

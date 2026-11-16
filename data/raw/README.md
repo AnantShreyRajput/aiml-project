@@ -13,3 +13,5 @@
 
 ## Gaps
 - No possession % or team-level xG for all seasons, and no FIFA/EA FC ratings (those sources were not reachable). FPL price, points and ICT index stand in as player ratings.
+
+"3,820 raw = 380 (2016-17 history) + 3,440 modelled (2,660 dev + 760 test + 20 live)”."
