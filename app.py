@@ -109,8 +109,29 @@ with tab_perf:
         'model': 'Model', 'test_accuracy': 'Accuracy', 'test_logloss': 'Log loss (lower = better)', 'test_macro_f1': 'Macro F1'})
     st.dataframe(res.style.format({'Accuracy': '{:.1%}', 'Log loss (lower = better)': '{:.3f}', 'Macro F1': '{:.3f}'}),
                  hide_index=True, width='stretch')
+    
+    #-----------------------------------------------------
+    #figs = os.path.join(ROOT, 'results', 'figures')
+    #names = sorted(os.listdir(figs)) if os.path.isdir(figs) else []
+    
+        # ---- feature ablation + football baselines (created by src/06_ablation.py and src/07_probability_eval.py)
+    abl_file = os.path.join(ROOT, 'results', 'ablation_summary.csv')
+    if os.path.exists(abl_file):
+        st.markdown('### Do the FPL squad features help? Ablation and football baselines')
+        st.caption('Walk-forward on 2021-22 → 2025-26: each season is predicted by models trained only on earlier seasons. '
+                   'A = Elo only, B = + rolling form, C = + previous-season FPL squad strength. '
+                   'Test columns use 2024-25 and 2025-26 (760 matches). Draw columns use a draw threshold chosen on 2021-22 to 2023-24.')
+        a = pd.read_csv(abl_file)[['model', 'mean_logloss_5seasons', 'std_logloss_5seasons', 'test_logloss', 'test_brier',
+                                    'test_accuracy', 'test_ece', 'draw_precision_rule', 'draw_recall_rule']]
+        a.columns = ['Model', 'Log loss, mean of 5 seasons', '± std across seasons', 'Test log loss', 'Test Brier',
+                     'Test accuracy', 'Calibration error (ECE)', 'Draw precision', 'Draw recall']
+        st.dataframe(a.style.format({c: '{:.3f}' for c in a.columns[1:] if c != 'Test accuracy'} | {'Test accuracy': '{:.1%}'}),
+                     hide_index=True, width='stretch')
+        st.caption('Lower is better for log loss, Brier and ECE. A draw is predicted when home and away look evenly matched.')
     figs = os.path.join(ROOT, 'results', 'figures')
     names = sorted(os.listdir(figs)) if os.path.isdir(figs) else []
+
+#---------------------------------------------------------------------------------------------
     for i in range(0, len(names), 2):
         cols = st.columns(2)
         for c, n in zip(cols, names[i:i + 2]):
@@ -128,7 +149,14 @@ with tab_about:
 - Last season's squad strength from Fantasy Premier League data (player prices, points, ICT index by position)
 - Head-to-head record over the last 5 meetings, promoted-team flags
 
-**Model:** Random Forest (300 trees, max depth 4), chosen by season-by-season cross-validation.
+**old Model:** Random Forest (300 trees, max depth 4), chosen by season-by-season cross-validation.
+**new Model:** Random Forest (300 trees, max depth 4), chosen by season-by-season cross-validation.
+ 
+**Research question:** do previous-season FPL squad features improve held-out match probabilities over Elo, rolling form
+and a Dixon-Coles goal model? The *Model performance* tab shows the ablation (A Elo → B + form → C + FPL) on identical
+season splits, with log loss, Brier score, calibration and draw precision/recall. This is a reproducible comparative
+study, not a new prediction algorithm.
+
 
 **Limits:** it never predicts a draw as the single most likely result, and it knows nothing about injuries
 on match day, manager changes or team news. Football is random: even bookmakers get only ~52% right.
