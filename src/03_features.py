@@ -52,7 +52,13 @@ for _,r in allm.iterrows():
     hist.setdefault(key,[]).append((r.HomeTeam,r.PointsHome))
 m=m.merge(pd.DataFrame(h2h,columns=['MatchID','H2H_HomePPG','H2H_n']),on='MatchID')
 
-# --- difference features (home minus away): models learn these best ---
+# new --- difference features (home minus away): models learn these best ---
+# AUDIT FIX 4: fill the season-opener gaps BEFORE taking home-minus-away differences.
+# (The old code differenced first, so a team with 0 games played vs a team with 1 game got a difference of 0 instead of the real gap.)
+for c in [c for c in m.columns if ('SeasonPPG' in c or 'SeasonGDpg' in c)]: m[c]=m[c].fillna(0)
+ 
+# old --- difference features (home minus away): models learn these best ---
+
 m['Elo_diff']=m.HomeElo-m.AwayElo
 for c in ['Points_L5','GF_L5','GA_L5','GD_L5','Shots_L5','SoT_L5','Win_L5','Points_L10','SeasonPPG','SeasonGDpg','RestDays','Points_L3']:
     m[f'{c}_diff']=m[f'Home_{c}']-m[f'Away_{c}']
@@ -67,8 +73,16 @@ m['H2H_HomePPG']=m.H2H_HomePPG.fillna(1.35)            # neutral = average point
 for c in [c for c in m.columns if ('SeasonPPG' in c or 'SeasonGDpg' in c)]: m[c]=m[c].fillna(0)
 m=m.sort_values('MatchDate').reset_index(drop=True)
 rolling=[c for c in m.columns if '_L' in c or 'Streak' in c or 'Run' in c or 'RestDays' in c or 'venue' in c or c.startswith('Attack_vs')]
-m[rolling]=m[rolling].fillna(m[rolling].median())
 
+#--------------------------------------------------------------------
+#m[rolling]=m[rolling].fillna(m[rolling].median())
+# AUDIT FIX 3: the fill value (median) is computed on the DEVELOPMENT seasons only (<= 2023-24).
+# The old code used the median of ALL rows, which included the test seasons.
+DEV_END = '2023-24'
+dev_median = m.loc[m.Season <= DEV_END, rolling].median()
+print('values filled with the dev-season median:', int(m[rolling].isna().sum().sum()))
+m[rolling] = m[rolling].fillna(dev_median)
+#-----------------------------------------------------------------
 # --- final files ---
 ID=['MatchID','MatchDate','Season','HomeTeam','AwayTeam']
 TARGET=['Result','FTResult','FTHome','FTAway']

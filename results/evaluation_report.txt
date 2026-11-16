@@ -1,5 +1,5 @@
-EVALUATION â€” champion: Random Forest (compact features), test = 2024-25 + 2025-26 (760 matches)
-Accuracy 0.505 | Log loss 1.0160
+EVALUATION — champion: Random Forest (compact features), test = 2024-25 + 2025-26 (760 matches)
+Accuracy 0.505 | Log loss 1.0161
 Bookmakers: accuracy 0.516, log loss 0.9945
 Predicted outcome counts: {'Home win': 499, 'Draw': 0, 'Away win': 261}  | Actual: {'Home win': 317, 'Draw': 197, 'Away win': 246}
 
@@ -16,21 +16,21 @@ weighted avg       0.37      0.51      0.43       760
 Accuracy by confidence band:
         accuracy  matches  avg_conf
 band                               
-<40%       0.453     86.0     0.382
-40-50%     0.433    291.0     0.449
-50-60%     0.511    184.0     0.544
-60-70%     0.587    121.0     0.644
-70%+       0.692     78.0     0.757
+<40%       0.440     84.0     0.382
+40-50%     0.439    294.0     0.449
+50-60%     0.508    183.0     0.545
+60-70%     0.583    120.0     0.644
+70%+       0.696     79.0     0.757
 
 Top 10 features (permutation importance, log loss):
                    feature  importance     std
-                  Elo_diff     0.00969 0.00324
-           SeasonGDpg_diff     0.00346 0.00136
-            SeasonPPG_diff     0.00209 0.00104
-                   HomeElo     0.00208 0.00095
-prev_squad_total_cost_diff     0.00057 0.00103
-                GD_L5_diff     0.00030 0.00036
-     prev_xi_avg_cost_diff     0.00024 0.00161
-               H2H_HomePPG     0.00022 0.00013
+                  Elo_diff     0.00950 0.00324
+           SeasonGDpg_diff     0.00341 0.00139
+            SeasonPPG_diff     0.00207 0.00107
+                   HomeElo     0.00206 0.00098
+prev_squad_total_cost_diff     0.00054 0.00106
+                GD_L5_diff     0.00028 0.00036
+               H2H_HomePPG     0.00020 0.00012
+     prev_xi_avg_cost_diff     0.00018 0.00162
                 GF_L5_diff     0.00017 0.00010
-               SoT_L5_diff     0.00010 0.00065
+             Away_promoted     0.00007 0.00003
