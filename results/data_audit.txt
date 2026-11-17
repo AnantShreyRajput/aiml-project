@@ -1,0 +1,56 @@
+1. DATASET RECONCILIATION
+         raw_rows first_match  last_match  in_model_table                                                 role
+Season                                                                                                        
+2016-17       380  2016-08-13  2017-05-21               0  history only (no earlier season for squad features)
+2017-18       380  2017-08-11  2018-05-13             380                             development (train + CV)
+2018-19       380  2018-08-10  2019-05-12             380                             development (train + CV)
+2019-20       380  2019-08-09  2020-07-26             380                             development (train + CV)
+2020-21       380  2020-09-12  2021-05-23             380                             development (train + CV)
+2021-22       380  2021-08-13  2022-05-22             380                             development (train + CV)
+2022-23       380  2022-08-05  2023-05-28             380                             development (train + CV)
+2023-24       380  2023-08-11  2024-05-19             380                             development (train + CV)
+2024-25       380  2024-08-16  2025-05-25             380                                                 TEST
+2025-26       380  2025-08-15  2026-05-24             380                                                 TEST
+2026-27        20  2026-08-21  2026-08-31              20       live / part-played: never trained or tested on
+raw 3820 = 2016-17 history 380 + modelled 3440
+modelled 3440 = development 2660 (2017-18..2023-24) + test 760 (2024-25, 2025-26) + live 20 (2026-27, excluded)
+complete seasons used for modelling: 9 x 380 = 3420; walk-forward evaluation seasons 2021-22..2025-26 = 1900 matches
+[PASS] every complete season has 380 matches 
+
+2. COMPLETED MATCHES ONLY
+[PASS] no missing results in the model table 
+[PASS] no match dated in the future (latest match 2026-08-31)
+[PASS] no duplicate fixtures 
+
+3. IS ELO A PRE-MATCH RATING?
+corr(change in Elo going INTO a match, points of the PREVIOUS match) = 0.393   (should be clearly positive)
+corr(change in Elo going INTO a match, points of THIS match)        = 0.034   (should be close to 0)
+[PASS] Elo already reflects the previous match but not the current one 
+
+4. EVERY PREDICTOR IS AVAILABLE BEFORE KICK-OFF
+[PASS] no same-match statistic, result or bookmaker column is a feature []
+     3 features  Elo (pre-match rating)
+    74 features  Rolling form / streaks / season-to-date (shifted by one match)
+     2 features  Head-to-head (earlier meetings only)
+    31 features  FPL squad strength (PREVIOUS season)
+
+   Re-computing features independently with src/predict.py (strictly earlier matches only)...
+   max |recomputed - stored| Elo_diff                     0.00e+00
+   max |recomputed - stored| Points_L5_diff               0.00e+00
+   max |recomputed - stored| GD_L5_diff                   0.00e+00
+   max |recomputed - stored| SoT_L5_diff                  0.00e+00
+   max |recomputed - stored| Points_L10_diff              0.00e+00
+   max |recomputed - stored| SeasonPPG_diff               0.00e+00
+   max |recomputed - stored| SeasonGDpg_diff              0.00e+00
+   max |recomputed - stored| H2H_HomePPG                  0.00e+00
+   max |recomputed - stored| prev_xi_avg_cost_diff        0.00e+00
+   max |recomputed - stored| prev_squad_total_cost_diff   0.00e+00
+   max |recomputed - stored| Home_promoted                0.00e+00
+   max |recomputed - stored| Away_promoted                0.00e+00
+[PASS] stored features equal features recomputed from earlier matches only 
+
+5. FPL SQUAD FEATURES USE THE PREVIOUS SEASON
+[PASS] Arsenal 2024-25 matches carry Arsenal 2023-24 squad value (199.1m)
+[PASS] promoted teams are flagged (3 per season on average) 
+
+RESULT: ALL CHECKS PASSED

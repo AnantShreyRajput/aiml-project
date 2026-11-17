@@ -13,7 +13,18 @@ canon = lambda n: NAME_MAP.get(n, n)
 # ---------- 1. matches ----------
 m = pd.read_csv(f'{RAW}/matches/epl_matches_2016-17_to_2026-27.csv')
 m = m.drop(columns=[c for c in m.columns if c.startswith('C_')] + ['MatchTime','Division'])
+
+#----------Changed here as the 2026-2027 live seasons future matches have alos been inlcuded
+#m['MatchDate'] = pd.to_datetime(m['MatchDate'])
+
 m['MatchDate'] = pd.to_datetime(m['MatchDate'])
+# AUDIT FIX 1: keep only COMPLETED matches. Unplayed / future fixtures have no result and must never reach the model.
+n_raw = len(m)
+m = m[m['FTResult'].isin(['H', 'D', 'A']) & (m['MatchDate'] <= pd.Timestamp.today().normalize())].copy()
+print(f'raw rows {n_raw} -> kept {len(m)} completed matches (dropped {n_raw - len(m)} unplayed/future fixtures)')
+
+#-------------------------------------------------------------------
+
 for c in ('HomeTeam','AwayTeam'): m[c] = m[c].map(canon)
 m = m.drop_duplicates(['MatchDate','HomeTeam','AwayTeam']).sort_values('MatchDate').reset_index(drop=True)
 m['Result'] = m['FTResult'].map({'H':0,'D':1,'A':2})          # target
@@ -21,11 +32,31 @@ m['Result'] = m['FTResult'].map({'H':0,'D':1,'A':2})          # target
 inv = 1/m[['OddHome','OddDraw','OddAway']]
 imp = inv.div(inv.sum(axis=1), axis=0); imp.columns = ['ImpHome','ImpDraw','ImpAway']
 m = pd.concat([m, imp], axis=1)
+
+
+#------------------------------------------------------------------
 # missing Elo -> previous known Elo of that team
-for side in ('Home','Away'):
-    pass
-m['HomeElo'] = m['HomeElo'].fillna(m.groupby('HomeTeam')['HomeElo'].transform('mean'))
-m['AwayElo'] = m['AwayElo'].fillna(m.groupby('AwayTeam')['AwayElo'].transform('mean'))
+#for side in ('Home','Away'):
+#   pass
+#m['HomeElo'] = m['HomeElo'].fillna(m.groupby('HomeTeam')['HomeElo'].transform('mean'))
+#m['AwayElo'] = m['AwayElo'].fillna(m.groupby('AwayTeam')['AwayElo'].transform('mean'))
+
+
+# AUDIT FIX 2: a missing Elo is filled with that team's LAST KNOWN Elo BEFORE the match.
+# (The old code used the team's mean over ALL seasons, which silently used future information.)
+def last_known_elo(team, date):
+    h = m.loc[(m.MatchDate < date) & (m.HomeTeam == team), ['MatchDate', 'HomeElo']].set_axis(['d', 'e'], axis=1)
+    a = m.loc[(m.MatchDate < date) & (m.AwayTeam == team), ['MatchDate', 'AwayElo']].set_axis(['d', 'e'], axis=1)
+    e = pd.concat([h, a]).dropna().sort_values('d')
+    return e.e.iloc[-1] if len(e) else np.nan
+for side, col in (('Home', 'HomeElo'), ('Away', 'AwayElo')):
+    for i in m.index[m[col].isna()]:
+        m.loc[i, col] = last_known_elo(m.loc[i, f'{side}Team'], m.loc[i, 'MatchDate'])
+        print(f'  filled missing {col} for {m.loc[i, f"{side}Team"]} on {m.loc[i, "MatchDate"]:%Y-%m-%d} with last known Elo')
+ 
+#-------------------------------------------------------------------
+
+
 m['HandiSize'] = m['HandiSize'].fillna(0)
 m['MatchID'] = np.arange(len(m))
 m['PointsHome'] = m['FTResult'].map({'H':3,'D':1,'A':0}); m['PointsAway'] = m['FTResult'].map({'H':0,'D':1,'A':3})
