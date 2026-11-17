@@ -27,7 +27,7 @@ col=[BLUE if 'Random Forest' in n else MUTED for n in r.model]
 ax.barh(r.model,r.test_accuracy*100,color=col,height=0.6)
 for i,v in enumerate(r.test_accuracy*100): ax.text(v+0.4,i,f'{v:.1f}%',va='center',color=INK,fontsize=9)
 ax.set_xlim(0,60); ax.xaxis.grid(True,color=GRID); ax.set_axisbelow(True); ax.set_xlabel('Test accuracy (%) — 760 matches, 2024-25 & 2025-26')
-title(ax,'All models beat the baseline','Champion (Random Forest) in blue; bookmakers shown for reference')
+title(ax,'All models beat the baseline','Random Forest (selected by cross-validation) in blue; bookmakers shown for reference')
 plt.tight_layout(); plt.savefig(f'{F}/1_model_comparison.png'); plt.close()
 
 # 2. confusion matrix (row-normalised)
@@ -92,7 +92,7 @@ plt.tight_layout(); plt.savefig(f'{F}/6_results_by_season.png'); plt.close()
 
 # text report
 rep=classification_report(y,pred,labels=[0,1,2],target_names=CLS,zero_division=0)
-s=f"""EVALUATION — champion: Random Forest (compact features), test = 2024-25 + 2025-26 ({len(test)} matches)
+s=f"""EVALUATION — selected model: Random Forest (compact features, chosen by cross-validation), test = 2024-25 + 2025-26 ({len(test)} matches)
 Accuracy {accuracy_score(y,pred):.3f} | Log loss {log_loss(y,P,labels=[0,1,2]):.4f}
 Bookmakers: accuracy {(test[['ImpHome','ImpDraw','ImpAway']].values.argmax(1)==y).mean():.3f}, log loss {log_loss(y,test[['ImpHome','ImpDraw','ImpAway']].values):.4f}
 Predicted outcome counts: {dict(zip(CLS,np.bincount(pred,minlength=3).tolist()))}  | Actual: {dict(zip(CLS,np.bincount(y,minlength=3).tolist()))}

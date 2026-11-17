@@ -18,13 +18,13 @@
     "cv_acc": 0.5456140350877193
   },
   "XGBoost": {
-    "feature_set": "compact",
+    "feature_set": "all",
     "params": {
       "max_depth": 2,
       "learning_rate": 0.02,
       "n_estimators": 300
     },
-    "cv_logloss": 0.9606030980745951,
-    "cv_acc": 0.5508771929824561
+    "cv_logloss": 0.9622075359026591,
+    "cv_acc": 0.5491228070175439
   }
 }

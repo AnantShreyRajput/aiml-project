@@ -26,6 +26,7 @@ complete seasons used for modelling: 9 x 380 = 3420; walk-forward evaluation sea
 corr(change in Elo going INTO a match, points of the PREVIOUS match) = 0.393   (should be clearly positive)
 corr(change in Elo going INTO a match, points of THIS match)        = 0.034   (should be close to 0)
 [PASS] Elo already reflects the previous match but not the current one 
+[PASS] model_features Elo equals matches_clean Elo for all matches (max gap 0.00e+00, 3440 matches)
 
 4. EVERY PREDICTOR IS AVAILABLE BEFORE KICK-OFF
 [PASS] no same-match statistic, result or bookmaker column is a feature []
@@ -34,19 +35,13 @@ corr(change in Elo going INTO a match, points of THIS match)        = 0.034   (s
      2 features  Head-to-head (earlier meetings only)
     31 features  FPL squad strength (PREVIOUS season)
 
-   Re-computing features independently with src/predict.py (strictly earlier matches only)...
-   max |recomputed - stored| Elo_diff                     0.00e+00
-   max |recomputed - stored| Points_L5_diff               0.00e+00
-   max |recomputed - stored| GD_L5_diff                   0.00e+00
-   max |recomputed - stored| SoT_L5_diff                  0.00e+00
-   max |recomputed - stored| Points_L10_diff              0.00e+00
-   max |recomputed - stored| SeasonPPG_diff               0.00e+00
-   max |recomputed - stored| SeasonGDpg_diff              0.00e+00
-   max |recomputed - stored| H2H_HomePPG                  0.00e+00
-   max |recomputed - stored| prev_xi_avg_cost_diff        0.00e+00
-   max |recomputed - stored| prev_squad_total_cost_diff   0.00e+00
-   max |recomputed - stored| Home_promoted                0.00e+00
-   max |recomputed - stored| Away_promoted                0.00e+00
+   Re-computing all model features with src/predict.py from strictly earlier matches only (400 matches)...
+   largest gaps: Elo_diff                     5.68e-14
+   largest gaps: prev_xi_avg_points_diff      1.42e-14
+   largest gaps: prev_xi_avg_ict_diff         1.42e-14
+   largest gaps: prev_gk_pts_diff             1.42e-14
+   largest gaps: prev_mid_pts_diff            1.42e-14
+   max |recomputed - stored| over all 27 features and 400 matches: 5.68e-14
 [PASS] stored features equal features recomputed from earlier matches only 
 
 5. FPL SQUAD FEATURES USE THE PREVIOUS SEASON

@@ -67,6 +67,8 @@ for m in models:
 per = pd.DataFrame(rows); per.to_csv(f'{R}/ablation_per_season.csv', index=False)
  
 # ------------------------------------------------------------------ 2. summary table
+_y_test = get(oof, models[0], TEST_SEASONS)[0]
+DRAW_BASE_RATE = float((_y_test == 1).mean())   # share of test matches that are draws = precision of guessing 'draw' every time
 summ = []
 for m in models:
     ps = per[per.model == m]
@@ -81,9 +83,21 @@ for m in models:
         test_logloss=logloss(y, p), test_brier=brier(y, p), test_accuracy=accuracy(y, p), test_ece=ece(y, p),
         draw_precision_argmax=pr_arg[0], draw_recall_argmax=pr_arg[1],
         draw_delta=delta, draw_precision_rule=pr_rule[0], draw_recall_rule=pr_rule[1], draw_f1_rule=pr_rule[2],
-        test_macro_f1_rule=macro_f1(y, draw_pred(p, delta))))
+        test_macro_f1_rule=macro_f1(y, draw_pred(p, delta)),
+        test_accuracy_rule=float((draw_pred(p, delta) == y).mean())))
 summ = pd.DataFrame(summ).sort_values('test_logloss'); summ.to_csv(f'{R}/ablation_summary.csv', index=False)
  
+# ------------------------------------------------------------------ 2b. accuracy by confidence (used by the app)
+# Deployed configuration = Random Forest, compact 27 features. Walk-forward predictions (every season predicted by a model
+# trained only on earlier seasons) over 5 seasons give 1,900 matches, so the bands are less noisy than the 760 test matches
+# and do not depend on the refitted production model, which has seen the test seasons.
+y_rf, p_rf, _ = get(oof, 'RF | C Elo+Form+FPL', ALL_SEASONS)
+conf_rf = p_rf.max(1)
+band = pd.cut(conf_rf, [0, 0.4, 0.5, 0.6, 0.7, 1], labels=['<40%', '40-50%', '50-60%', '60-70%', '70%+'])
+cb = pd.DataFrame({'band': band, 'hit': (p_rf.argmax(1) == y_rf).astype(float), 'conf': conf_rf}).groupby('band', observed=True) \
+       .agg(accuracy=('hit', 'mean'), matches=('hit', 'size'), avg_conf=('conf', 'mean'))
+cb.to_csv(f'{R}/accuracy_by_confidence_walkforward.csv')
+
 # ------------------------------------------------------------------ 3. paired bootstrap of log-loss differences
 rng = np.random.default_rng(42)
 def per_match_loss(m, seasons):
@@ -139,7 +153,9 @@ plt.savefig(f'{R}/figures/7_logloss_by_season.png', dpi=150); plt.close()
 pd.set_option('display.width', 250); pd.set_option('display.max_columns', 30)
 rep = ['PROBABILITY AND DRAW EVALUATION',
        'Walk-forward: every season is predicted by models trained only on earlier seasons.',
-       'Test = 2024-25 + 2025-26 (760 matches). Draw threshold (delta) was chosen on 2021-22..2023-24 only.', '',
+       'Test = 2024-25 + 2025-26 (760 matches). Draw threshold (delta) was chosen on 2021-22..2023-24 only.',
+       f'Draw base rate on the test seasons = {DRAW_BASE_RATE:.3f}: a draw precision near this value means the draw rule has no skill beyond guessing.',
+       'test_accuracy_rule = accuracy when the draw rule is applied (the cost of predicting draws).', '',
        '--- Summary (sorted by test log loss) ---',
        summ.round(4).to_string(index=False), '',
        '--- Per-season log loss ---',

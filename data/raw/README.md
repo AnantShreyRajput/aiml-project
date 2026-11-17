@@ -15,3 +15,7 @@
 - No possession % or team-level xG for all seasons, and no FIFA/EA FC ratings (those sources were not reachable). FPL price, points and ICT index stand in as player ratings.
 
 "3,820 raw = 380 (2016-17 history) + 3,440 modelled (2,660 dev + 760 test + 20 live)”."
+
+## Integrity
+`MANIFEST.csv` holds the SHA-256 checksum and row count of every raw file used for the reported results. `python src/01_check_raw_data.py` verifies them
+(`--write-manifest` records a new reference after a deliberate data update).

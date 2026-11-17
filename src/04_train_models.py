@@ -67,11 +67,11 @@ bk=X_t[['ImpHome','ImpDraw','ImpAway']].values; out.append(row('Bookmakers (refe
 res=pd.DataFrame(out).round(4).sort_values('test_logloss'); print('\n',res.to_string(index=False))
 res.to_csv('results/model_comparison.csv',index=False)
 
-# ---- save the best real model (lowest test... chosen by CV log loss, NOT by test) ----
+# ---- save the champion: chosen by CV log loss, NOT by test score ----
 champ=min(best,key=lambda n:best[n]['cv_logloss']); m,cols=fitted[champ]
 # refit on dev + test for deployment (more data = better live predictions); the evaluation above used the dev-only fit
 final=models[champ][0](**best[champ]['params']).fit(pd.concat([dev,test])[cols],pd.concat([dev,test]).Result)
 joblib.dump(dict(model=final,features=cols,classes=['Home win','Draw','Away win']),'models/best_model.pkl')
 joblib.dump(dict(model=m,features=cols,classes=['Home win','Draw','Away win']),'models/best_model_dev_only.pkl')
 json.dump(dict(champion=champ,**best),open('results/best_params.json','w'),indent=2,default=float)
-print('\nChampion (chosen by CV, before seeing test):',champ)
+print('\nSelected model (chosen by CV, before seeing test):',champ)

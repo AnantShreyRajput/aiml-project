@@ -47,6 +47,11 @@ say(f'corr(change in Elo going INTO a match, points of THIS match)        = {c_n
 check('Elo already reflects the previous match but not the current one', c_prev > 0.3 and abs(c_now) < 0.1)
  
 # ---------------------------------------------------------------- 4. predictors are known before kick-off
+# the model table must carry exactly the cleaned pre-match Elo for EVERY match (not just a sample)
+chk = mf.merge(mc[['MatchID', 'HomeElo', 'AwayElo']], on='MatchID', suffixes=('', '_clean'))
+elo_gap = max((chk.HomeElo - chk.HomeElo_clean).abs().max(), (chk.AwayElo - chk.AwayElo_clean).abs().max())
+check('model_features Elo equals matches_clean Elo for all matches', elo_gap < 1e-9, f'(max gap {elo_gap:.2e}, {len(chk)} matches)')
+
 say('\n4. EVERY PREDICTOR IS AVAILABLE BEFORE KICK-OFF')
 post_match = ['FTHome', 'FTAway', 'FTResult', 'HTHome', 'HTAway', 'HTResult', 'PointsHome', 'PointsAway', 'Result'] + \
              [f'{s}{c}' for s in ('Home', 'Away') for c in ('Shots', 'Target', 'Fouls', 'Corners', 'Yellow', 'Red')]
@@ -58,22 +63,24 @@ groups = {'Elo (pre-match rating)': [c for c in feats if 'Elo' in c],
           'FPL squad strength (PREVIOUS season)': [c for c in feats if 'prev_' in c or 'promoted' in c]}
 for g, cols in groups.items(): say(f'   {len(cols):3d} features  {g}')
  
-# independent recomputation: src/predict.py rebuilds features from raw history using Date < kick-off date
-say('\n   Re-computing features independently with src/predict.py (strictly earlier matches only)...')
+# Rebuild the features of a sample of matches the way the app does (src/predict.py): only matches dated BEFORE the kick-off
+# are visible, and the form / head-to-head / difference logic is the same code as training (src/features.py).
+# This proves the stored features contain nothing from the match itself or later, for ALL 27 model features.
+say('\n   Re-computing all model features with src/predict.py from strictly earlier matches only (400 matches)...')
 from predict import Predictor
 pr = Predictor()
-samp = mf[mf.Season >= '2018-19'].sample(150, random_state=1)
-cols = ['Elo_diff', 'Points_L5_diff', 'GD_L5_diff', 'SoT_L5_diff', 'Points_L10_diff', 'SeasonPPG_diff', 'SeasonGDpg_diff',
-        'H2H_HomePPG', 'prev_xi_avg_cost_diff', 'prev_squad_total_cost_diff', 'Home_promoted', 'Away_promoted']
+samp = mf[mf.Season >= '2018-19'].sample(400, random_state=1)
+cols = list(pr.features)
 err = {c: 0.0 for c in cols}
 for _, r in samp.iterrows():
     X, _ = pr.features_for(r.HomeTeam, r.AwayTeam, r.MatchDate, home_elo=r.HomeElo, away_elo=r.AwayElo)
+    X = X.fillna(pr.fill).iloc[0]
     for c in cols:
-        v = X[c].iloc[0]
-        if pd.notna(v): err[c] = max(err[c], abs(v - r[c]))
-for c, e in err.items(): say(f'   max |recomputed - stored| {c:28s} {e:.2e}')
+        err[c] = max(err[c], abs(float(X[c]) - float(r[c])))
+for c, e in sorted(err.items(), key=lambda kv: -kv[1])[:5]: say(f'   largest gaps: {c:28s} {e:.2e}')
+say(f'   max |recomputed - stored| over all {len(cols)} features and {len(samp)} matches: {max(err.values()):.2e}')
 check('stored features equal features recomputed from earlier matches only', max(err.values()) < 1e-6)
- 
+
 # ---------------------------------------------------------------- 5. FPL squad features come from the previous season
 say('\n5. FPL SQUAD FEATURES USE THE PREVIOUS SEASON')
 sq = pd.read_csv(f'{P}/squad_strength_by_season.csv')

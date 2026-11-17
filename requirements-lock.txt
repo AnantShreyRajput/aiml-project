@@ -1,0 +1,11 @@
+# Exact versions used to produce every number in README.md and results/ (Python 3.13).
+# Install with:  pip install -r requirements-lock.txt   (requirements.txt only sets minimum versions)
+streamlit==1.67.0
+scikit-learn==1.9.1
+pandas==3.0.5
+numpy==2.5.3
+joblib==1.6.0
+altair==6.3.0
+matplotlib==3.11.2
+xgboost==3.4.1
+scipy==1.18.1

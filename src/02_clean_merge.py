@@ -1,5 +1,7 @@
 """Step 2: clean + merge raw EPL data -> data/processed/. Run from project root."""
-import pandas as pd, numpy as np, glob, os
+import pandas as pd, numpy as np, glob, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from features import squad_floor
 RAW, OUT = 'data/raw', 'data/processed'
 os.makedirs(OUT, exist_ok=True)
 SEASONS = ['2016-17','2017-18','2018-19','2019-20','2020-21','2021-22','2022-23','2023-24','2024-25','2025-26','2026-27']
@@ -14,16 +16,12 @@ canon = lambda n: NAME_MAP.get(n, n)
 m = pd.read_csv(f'{RAW}/matches/epl_matches_2016-17_to_2026-27.csv')
 m = m.drop(columns=[c for c in m.columns if c.startswith('C_')] + ['MatchTime','Division'])
 
-#----------Changed here as the 2026-2027 live seasons future matches have alos been inlcuded
-#m['MatchDate'] = pd.to_datetime(m['MatchDate'])
-
 m['MatchDate'] = pd.to_datetime(m['MatchDate'])
-# AUDIT FIX 1: keep only COMPLETED matches. Unplayed / future fixtures have no result and must never reach the model.
+# Keep only COMPLETED matches: unplayed / future fixtures have no result and must never reach the model.
+# (Decided by the presence of a result, not by today's date, so the output is the same whenever the script is run.)
 n_raw = len(m)
-m = m[m['FTResult'].isin(['H', 'D', 'A']) & (m['MatchDate'] <= pd.Timestamp.today().normalize())].copy()
-print(f'raw rows {n_raw} -> kept {len(m)} completed matches (dropped {n_raw - len(m)} unplayed/future fixtures)')
-
-#-------------------------------------------------------------------
+m = m[m['FTResult'].isin(['H', 'D', 'A'])].copy()
+print(f'raw rows {n_raw} -> kept {len(m)} completed matches (dropped {n_raw - len(m)} unplayed fixtures)')
 
 for c in ('HomeTeam','AwayTeam'): m[c] = m[c].map(canon)
 m = m.drop_duplicates(['MatchDate','HomeTeam','AwayTeam']).sort_values('MatchDate').reset_index(drop=True)
@@ -34,16 +32,8 @@ imp = inv.div(inv.sum(axis=1), axis=0); imp.columns = ['ImpHome','ImpDraw','ImpA
 m = pd.concat([m, imp], axis=1)
 
 
-#------------------------------------------------------------------
-# missing Elo -> previous known Elo of that team
-#for side in ('Home','Away'):
-#   pass
-#m['HomeElo'] = m['HomeElo'].fillna(m.groupby('HomeTeam')['HomeElo'].transform('mean'))
-#m['AwayElo'] = m['AwayElo'].fillna(m.groupby('AwayTeam')['AwayElo'].transform('mean'))
-
-
-# AUDIT FIX 2: a missing Elo is filled with that team's LAST KNOWN Elo BEFORE the match.
-# (The old code used the team's mean over ALL seasons, which silently used future information.)
+# A missing Elo is filled with that team's LAST KNOWN Elo BEFORE the match (never an all-seasons average,
+# which would use future information).
 def last_known_elo(team, date):
     h = m.loc[(m.MatchDate < date) & (m.HomeTeam == team), ['MatchDate', 'HomeElo']].set_axis(['d', 'e'], axis=1)
     a = m.loc[(m.MatchDate < date) & (m.AwayTeam == team), ['MatchDate', 'AwayElo']].set_axis(['d', 'e'], axis=1)
@@ -53,9 +43,6 @@ for side, col in (('Home', 'HomeElo'), ('Away', 'AwayElo')):
     for i in m.index[m[col].isna()]:
         m.loc[i, col] = last_known_elo(m.loc[i, f'{side}Team'], m.loc[i, 'MatchDate'])
         print(f'  filled missing {col} for {m.loc[i, f"{side}Team"]} on {m.loc[i, "MatchDate"]:%Y-%m-%d} with last known Elo')
- 
-#-------------------------------------------------------------------
-
 
 m['HandiSize'] = m['HandiSize'].fillna(0)
 m['MatchID'] = np.arange(len(m))
@@ -117,11 +104,11 @@ for side_ in ('Home','Away'):
 for side_ in ('Home','Away'):
     cols = [f'{side_}_prev_{c}' for c in feat]
     m[f'{side_}_promoted'] = m[cols[0]].isna().astype(int)
+floors = {season: squad_floor(g, feat) for season, g in p.groupby('Season')}      # same rule src/predict.py uses
 for c in feat:
     for side_ in ('Home','Away'):
         col = f'{side_}_prev_{c}'
-        floor = m['Season'].map(p.groupby('Season')[c].apply(lambda x: x.nsmallest(3).mean()))  # 3 weakest distinct teams
-        m[col] = m[col].fillna(floor)
+        m[col] = m[col].fillna(m['Season'].map({s_: f[c] for s_, f in floors.items()}))
 m = m[m.Season != '2016-17'].reset_index(drop=True)      # first season has no "previous season" squad data
 m.to_csv(f'{OUT}/model_dataset_v1.csv', index=False)
 print('matches_clean', len(pd.read_csv(f'{OUT}/matches_clean.csv')), '| long', len(long), '| squad rows', len(sq), '| model_dataset_v1', m.shape)
